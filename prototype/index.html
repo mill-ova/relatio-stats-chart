@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="uk" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relatio · Stats Chart — клікабельний прототип</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   Relatio · Stats Chart · prototype
+   Джерело: Figma «Relatio - App» → сторінка «↪ Charts»
+   Stats Chart 18360:92367 · Stats Header 18360:92366 · Chart Plot 18360:88565
+   Усі кольори — значення семантичних токенів Color/Semantic (Light/Dark)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Токени: Dark (первинна тема) ───────────────────────────── */
+[data-theme="dark"]{
+  --bg-default:#0c0d11;
+  --bg-secondary:#2e2e36;
+  --bg-inverse:#f9fafd;
+  --bg-brand-subtle:#393292;
+  --bg-brand-disabled:#6a6b74;
+  --text-default:#f9fafd;
+  --text-secondary:#c2c3cb;
+  --text-tertiary:#999aa3;
+  --text-inverse:#0c0d11;
+  --border-divider:#373740;
+  --border-strong:#4f5059;
+  --icon-default:#f9fafd;
+  --icon-secondary:#c2c3cb;
+  --brand-from:#569cf8;
+  --brand-to:#6d69e6;
+  --shine:rgba(255,255,255,.32);
+}
+/* ── Токени: Light ─────────────────────────────────────────── */
+[data-theme="light"]{
+  --bg-default:#f9fafd;
+  --bg-secondary:#ffffff;
+  --bg-inverse:#0c0d11;
+  --bg-brand-subtle:#ebedff;
+  --bg-brand-disabled:#f1f2f7;
+  --text-default:#0c0d11;
+  --text-secondary:#4f5059;
+  --text-tertiary:#84858e;
+  --text-inverse:#ffffff;
+  --border-divider:#f1f2f7;
+  --border-strong:#dddee4;
+  --icon-default:#0c0d11;
+  --icon-secondary:#4f5059;
+  --brand-from:#569cf8;
+  --brand-to:#5a4fd6;
+  --shine:rgba(255,255,255,.6);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  background:#16171b;
+  font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  color:#8b8c95;
+  display:flex;
+  justify-content:center;
+  padding:48px 24px;
+  gap:48px;
+  flex-wrap:wrap;
+  align-items:flex-start;
+}
+
+/* ── Сцена ─────────────────────────────────────────────────── */
+.device-col{display:flex;flex-direction:column;align-items:center;gap:16px}
+.device-caption{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#5f606a;margin:0}
+
+/* ── Пристрій: iPhone 17 Pro Max 440×956 ───────────────────── */
+.phone{
+  position:relative;
+  width:440px;height:956px;
+  border-radius:24px;
+  background:var(--bg-default);
+  overflow:hidden;
+  flex:0 0 auto;
+  box-shadow:0 40px 80px -20px rgba(0,0,0,.7);
+  transition:background .28s ease;
+}
+
+/* ── Top Bar ───────────────────────────────────────────────── */
+/* зони 157 px, як у Figma Status Bar */
+.statusbar{height:54px;display:flex;align-items:center}
+.statusbar .zone{width:157px;display:flex;align-items:center;justify-content:center}
+.statusbar .zone.right{margin-left:auto}
+.statusbar .time{font-size:17px;font-weight:600;color:var(--text-default);letter-spacing:.01em}
+.statusbar svg{display:block}
+.titlebar{height:56px;display:flex;align-items:center}
+.titlebar .lead,.titlebar .trail{width:64px;display:flex;align-items:center}
+.titlebar .lead{padding-left:16px}
+.titlebar .trail{padding-right:16px;justify-content:flex-end}
+.titlebar .center{flex:1;text-align:center}
+.titlebar .title{font-size:16px;font-weight:500;line-height:24px;color:var(--text-default)}
+
+/* ── Icon Button ───────────────────────────────────────────── */
+.icon-btn{
+  width:40px;height:40px;border:0;border-radius:999px;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  background:transparent;cursor:pointer;
+  transition:transform .12s ease,opacity .18s ease,background .28s ease;
+}
+.icon-btn svg{display:block}
+.icon-btn.secondary{
+  background:color-mix(in srgb,var(--bg-secondary) 60%,transparent);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  box-shadow:0 2px 20px rgba(56,56,56,.04);
+}
+.icon-btn:active{transform:scale(.93)}
+.icon-btn[disabled]{opacity:.28;cursor:default}
+.icon-btn[disabled]:active{transform:none}
+
+/* ── Stats Chart: обгортка, gap space/24 ───────────────────── */
+.stats-chart{
+  position:absolute;left:16px;top:126px;width:408px;
+  display:flex;flex-direction:column;gap:24px;
+}
+
+/* ── Stats Header: gap space/16 ────────────────────────────── */
+.stats-header{display:flex;flex-direction:column;gap:16px}
+.hdr-row{display:flex;align-items:flex-start;gap:16px}
+.metric{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.value{
+  font-size:40px;font-weight:500;line-height:48px;letter-spacing:0;
+  background:linear-gradient(90deg,var(--brand-from),var(--brand-to));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  display:inline-block;
+}
+.value.is-muted{background:none;-webkit-text-fill-color:var(--text-tertiary);color:var(--text-tertiary)}
+.metric-label,.second-label{font-size:12px;font-weight:500;line-height:18px;color:var(--text-tertiary)}
+.second-metric{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.second-value{font-size:24px;font-weight:500;line-height:32px;color:var(--text-default)}
+.insight{
+  margin:0;font-size:14px;font-weight:400;line-height:21px;color:var(--text-default);
+}
+.insight b{font-weight:600}
+[hidden]{display:none!important}
+
+/* ── Range Switch: 3 × Button/Small, gap space/8 ───────────── */
+.range-switch{display:flex;gap:8px}
+.pill{
+  position:relative;height:40px;padding:0 16px;border:0;border-radius:999px;
+  font-family:inherit;font-size:16px;font-weight:500;line-height:24px;
+  cursor:pointer;background:transparent;color:var(--text-default);
+  transition:transform .12s ease,color .2s ease;
+  box-shadow:0 2px 20px rgba(56,56,56,.04);
+}
+.pill span{position:relative;z-index:2}
+.pill::before{ /* Tint */
+  content:'';position:absolute;inset:0;border-radius:999px;z-index:1;
+  background:var(--bg-secondary);opacity:.6;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  transition:background .28s ease,opacity .2s ease;
+}
+.pill::after{ /* Glow — тільки у вибраного */
+  content:'';position:absolute;inset:0;border-radius:999px;z-index:0;
+  background:linear-gradient(135deg,var(--brand-from),var(--brand-to));
+  filter:blur(12px);opacity:0;transition:opacity .24s ease;
+}
+.pill[aria-selected="true"]{color:var(--text-inverse)}
+.pill[aria-selected="true"]::before{background:var(--bg-inverse);opacity:.95}
+.pill[aria-selected="true"]::after{opacity:.8}
+.pill:active{transform:scale(.97)}
+
+/* ── Period Nav ────────────────────────────────────────────── */
+.period-nav{display:flex;align-items:center;gap:8px;height:40px}
+.period{
+  flex:1;text-align:center;font-size:14px;font-weight:500;line-height:21px;
+  color:var(--text-secondary);
+}
+
+/* ── Chart Plot ────────────────────────────────────────────── */
+.chart-plot{display:flex;flex-direction:column;gap:8px}
+.plot-stack{position:relative;width:408px;height:200px}
+.canvas{position:absolute;inset:0;width:408px;height:200px;overflow:visible}
+.gridline{stroke:var(--border-divider);stroke-width:1}
+.area{fill-opacity:.4}
+.glow{fill:none;stroke-width:3;opacity:.8;filter:blur(8px)}
+.line{fill:none;stroke-width:2}
+.demo{fill:none;stroke:var(--border-strong);stroke-width:2}
+/* hidden не діє на SVG-вузли → перемикаємо станом полотна */
+.canvas[data-state="default"] .demo,
+.canvas[data-state="default"] .empty-caption{display:none}
+.canvas[data-state="empty"] .area,
+.canvas[data-state="empty"] .glow,
+.canvas[data-state="empty"] .line{display:none}
+.y-label,.x-label,.empty-caption{font-size:12px;font-weight:400;fill:var(--text-tertiary)}
+.xlabels{display:flex;justify-content:space-between;width:360px;height:18px}
+.xlabels span{font-size:12px;line-height:18px;color:var(--text-tertiary);white-space:nowrap}
+
+/* ── Pointer (scrub) ───────────────────────────────────────── */
+.plot-stack{touch-action:none;cursor:crosshair}
+.canvas[data-state="empty"] #pointer{display:none}
+.pointer-line{stroke:var(--border-strong);stroke-width:1}
+.pointer-glow{opacity:.4;filter:blur(5px)}
+/* Пілюля значення = _Pill: Tint bg/inverse на opacity/90 + шар Glass, radius/full, text/inverse */
+.scrub-pill{
+  position:absolute;left:0;top:0;
+  padding:2px 8px;border-radius:999px;
+  background:color-mix(in srgb, var(--bg-inverse) 90%, transparent);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  font-size:12px;font-weight:400;line-height:18px;color:var(--text-inverse);
+  white-space:nowrap;pointer-events:none;
+  transform:translate(-50%,-100%);
+}
+.scrub-pill.below{transform:translate(-50%,0)}
+.scrub-pill b{font-weight:500}   /* Value — Body/Small/Medium */
+
+/* Малювання кривої */
+.draw .line,.draw .glow{
+  stroke-dasharray:var(--len);stroke-dashoffset:var(--len);
+  animation:draw .7s cubic-bezier(.22,.61,.36,1) forwards;
+}
+@keyframes draw{to{stroke-dashoffset:0}}
+.fade-in{animation:fade .5s ease forwards}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+/* ── Skeleton bones ────────────────────────────────────────── */
+/* база — bg/brand-disabled з opacity/40, shine лишається на повну */
+.bone{position:relative;overflow:hidden;border-radius:4px;background:none}
+.bone::before{
+  content:'';position:absolute;inset:0;border-radius:inherit;
+  background:var(--bg-brand-disabled);opacity:.4;
+}
+.bone::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent 0%,var(--shine) 50%,transparent 100%);
+  transform:translateX(-100%);animation:shine 1.5s cubic-bezier(.4,0,.2,1) infinite;
+}
+@keyframes shine{to{transform:translateX(100%)}}
+.hdr-skeleton{display:flex;flex-direction:column;gap:16px}
+.sk-top{display:flex;gap:16px;align-items:flex-start}
+.sk-metric{flex:1;display:flex;flex-direction:column;gap:8px}
+.sk-second{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.sk-lines{display:flex;flex-direction:column;gap:8px}
+.plot-skeleton{position:absolute;inset:0}
+.plot-skeleton .sk-plot{position:absolute;left:0;top:40px;width:360px;height:150px;border-radius:8px}
+.plot-skeleton .sk-y{position:absolute;left:380px;width:28px;height:10px}
+.xlabels.is-loading span{width:34px;height:10px}
+
+/* ── Дебаг-панель (не частина UI) ──────────────────────────── */
+.panel{
+  width:300px;flex:0 0 auto;
+  background:#1d1e23;border:1px solid #2a2b31;border-radius:16px;padding:20px;
+  font-size:13px;line-height:1.55;
+}
+.panel h2{margin:0 0 4px;font-size:14px;font-weight:600;color:#e8e9ee}
+.panel .sub{margin:0 0 20px;font-size:12px;color:#6d6e78}
+.panel h3{margin:0 0 8px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6d6e78}
+.panel section{margin-bottom:20px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{
+  font-family:inherit;font-size:12px;font-weight:500;padding:7px 12px;border-radius:8px;
+  border:1px solid #33343c;background:#24252b;color:#b9bac3;cursor:pointer;transition:.15s;
+}
+.seg button:hover{border-color:#44454f}
+.seg button[aria-pressed="true"]{background:#5a4fd6;border-color:#5a4fd6;color:#fff}
+.panel .note{font-size:12px;color:#6d6e78;margin:0}
+.panel kbd{
+  font-family:inherit;font-size:11px;background:#2a2b31;border:1px solid #383941;
+  border-radius:4px;padding:1px 5px;color:#9fa0aa;
+}
+.panel .flag{border-top:1px solid #2a2b31;padding-top:16px;margin-top:4px}
+.panel .flag p{margin:0 0 8px}
+.panel .flag b{color:#c9cad2;font-weight:600}
+@media (max-width:1100px){body{padding:24px 12px}.panel{width:100%;max-width:440px}}
+</style>
+</head>
+<body>
+
+<div class="device-col">
+  <div class="phone" id="phone">
+
+    <!-- ══ Top Bar ══ -->
+    <div class="statusbar">
+      <span class="zone"><span class="time">9:41</span></span>
+      <span class="zone right">
+        <svg width="76" height="13" viewBox="0 0 76 13" fill="none">
+          <path d="M1 9.5h2v3H1zM5.5 7h2v5.5h-2zM10 4.5h2v8h-2zM14.5 2h2v10.5h-2z" fill="currentColor" style="color:var(--icon-default)"/>
+          <path d="M28.5 3.6c2.6-2.3 6.4-2.3 9 0l.4.4 1.5-1.5-.5-.4c-3.4-3-8.5-3-11.9 0l-.5.4L28 4l.5-.4zm2.2 2.2c1.4-1.2 3.4-1.2 4.7 0l.4.4 1.5-1.5-.4-.4c-2.2-1.9-5.5-1.9-7.7 0l-.4.4 1.5 1.5.4-.4zm2.4 2.3 1.7 1.7 1.7-1.7c-.9-1-2.5-1-3.4 0z" fill="currentColor" style="color:var(--icon-default)"/>
+          <rect x="52" y="2" width="20" height="9.5" rx="2.5" stroke="currentColor" stroke-opacity=".4" style="color:var(--icon-default)"/>
+          <rect x="53.5" y="3.5" width="15" height="6.5" rx="1.5" fill="currentColor" style="color:var(--icon-default)"/>
+          <path d="M73.5 5v3.5c.9-.3 1.5-1 1.5-1.75S74.4 5.3 73.5 5z" fill="currentColor" fill-opacity=".4" style="color:var(--icon-default)"/>
+        </svg>
+      </span>
+    </div>
+
+    <div class="titlebar">
+      <div class="lead">
+        <button class="icon-btn secondary" aria-label="Назад">
+          <!-- arrow-left, точний шлях з Figma -->
+          <svg width="16" height="16" viewBox="0 0 16 16"><path d="M 7.292893409729004 0.2928932309150696 C 7.683417320251465 -0.09763109683990479 8.316431999206543 -0.09763109683990479 8.706955909729004 0.2928932309150696 C 9.097480654716492 0.6834174692630768 9.097480654716492 1.3164315521717072 8.706955909729004 1.7069557905197144 L 3.413986921310425 6.999924659729004 L 14.999924659729004 6.999924659729004 C 15.552209854125977 6.999924659729004 15.999924659729004 7.4476399421691895 15.999924659729004 7.999924659729004 C 15.999924659729004 8.552209377288818 15.552209854125977 8.999924659729004 14.999924659729004 8.999924659729004 L 3.413986921310425 8.999924659729004 L 8.706955909729004 14.292893409729004 C 9.097480773925781 14.683417320251465 9.097480773925781 15.316431999206543 8.706955909729004 15.706955909729004 C 8.316431999206543 16.09748077392578 7.683417320251465 16.09748077392578 7.292893409729004 15.706955909729004 L 0.2928932309150696 8.706955909729004 C -0.09763109683990479 8.316431999206543 -0.09763109683990479 7.683417320251465 0.2928932309150696 7.292893409729004 L 7.292893409729004 0.2928932309150696 Z" fill="var(--icon-default)"/></svg>
+        </button>
+      </div>
+      <div class="center"><span class="title">Progress</span></div>
+      <div class="trail"></div>
+    </div>
+
+    <!-- ══ Stats Chart ══ -->
+    <section class="stats-chart" aria-label="Stats Chart">
+
+      <!-- 1 · Stats Header -->
+      <div class="stats-header" id="statsHeader">
+        <div id="hdrReal">
+          <div class="hdr-row" style="margin-bottom:16px">
+            <div class="metric">
+              <div class="value-row"><span class="value" id="heroValue">+8%</span></div>
+              <div class="metric-label" id="metricLabel">IN CONTROL</div>
+            </div>
+            <div class="second-metric" id="secondMetric" hidden>
+              <div class="second-label">ACTIVE DAYS</div>
+              <div class="second-value" id="secondValue">6</div>
+            </div>
+          </div>
+          <p class="insight" id="insight"></p>
+        </div>
+        <div class="hdr-skeleton" id="hdrSkeleton" hidden aria-hidden="true">
+          <div class="sk-top">
+            <div class="sk-metric">
+              <div class="bone" style="width:120px;height:40px;border-radius:8px"></div>
+              <div class="bone" style="width:88px;height:12px"></div>
+            </div>
+            <div class="sk-second" id="skSecond" hidden>
+              <div class="bone" style="width:72px;height:10px"></div>
+              <div class="bone" style="width:96px;height:24px;border-radius:6px"></div>
+            </div>
+          </div>
+          <div class="sk-lines">
+            <div class="bone" style="width:408px;height:14px"></div>
+            <div class="bone" style="width:220px;height:14px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 · Range Switch -->
+      <div class="range-switch" role="tablist" aria-label="Період графіка" id="rangeSwitch">
+        <button class="pill" role="tab" data-range="week"  aria-selected="true"><span>Week</span></button>
+        <button class="pill" role="tab" data-range="month" aria-selected="false"><span>Month</span></button>
+        <button class="pill" role="tab" data-range="all"   aria-selected="false"><span>All time</span></button>
+      </div>
+
+      <!-- 3 · Period Nav -->
+      <div class="period-nav" id="periodNav">
+        <button class="icon-btn ghost" id="prevBtn" aria-label="Попередній період">
+          <svg width="24" height="24" viewBox="0 0 24 24"><g transform="translate(8,5)"><path d="M 6.292893409729004 0.2928932309150696 C 6.683417320251465 -0.09763109683990479 7.316431999206543 -0.09763109683990479 7.706955909729004 0.2928932309150696 C 8.097480177879333 0.6834174692630768 8.097480177879333 1.3164315521717072 7.706955909729004 1.7069557905197144 L 2.413986921310425 6.999924659729004 L 7.706955909729004 12.292893409729004 C 8.097480297088623 12.683417320251465 8.097480297088623 13.316431999206543 7.706955909729004 13.706955909729004 C 7.316431999206543 14.097480773925781 6.683417320251465 14.097480773925781 6.292893409729004 13.706955909729004 L 0.2928932309150696 7.706955909729004 C -0.09763109683990479 7.316431999206543 -0.09763109683990479 6.683417320251465 0.2928932309150696 6.292893409729004 L 6.292893409729004 0.2928932309150696 Z" fill="var(--icon-secondary)"/></g></svg>
+        </button>
+        <span class="period" id="periodLabel" aria-live="polite">Last 7 days</span>
+        <button class="icon-btn ghost" id="nextBtn" aria-label="Наступний період">
+          <svg width="24" height="24" viewBox="0 0 24 24"><g transform="translate(16,5) scale(-1,1)"><path d="M 6.292893409729004 0.2928932309150696 C 6.683417320251465 -0.09763109683990479 7.316431999206543 -0.09763109683990479 7.706955909729004 0.2928932309150696 C 8.097480177879333 0.6834174692630768 8.097480177879333 1.3164315521717072 7.706955909729004 1.7069557905197144 L 2.413986921310425 6.999924659729004 L 7.706955909729004 12.292893409729004 C 8.097480297088623 12.683417320251465 8.097480297088623 13.316431999206543 7.706955909729004 13.706955909729004 C 7.316431999206543 14.097480773925781 6.683417320251465 14.097480773925781 6.292893409729004 13.706955909729004 L 0.2928932309150696 7.706955909729004 C -0.09763109683990479 7.316431999206543 -0.09763109683990479 6.683417320251465 0.2928932309150696 6.292893409729004 L 6.292893409729004 0.2928932309150696 Z" fill="var(--icon-secondary)"/></g></svg>
+        </button>
+      </div>
+
+      <!-- 4 · Chart Plot -->
+      <div class="chart-plot" id="chartPlot">
+        <div class="plot-stack">
+          <svg class="canvas" id="canvas" viewBox="0 0 408 200" data-state="default" aria-hidden="true">
+            <defs>
+              <linearGradient id="gArea" gradientUnits="userSpaceOnUse" x1="0" x2="0" y1="8" y2="190">
+                <stop offset="0" stop-color="var(--bg-brand-subtle)"/>
+                <stop offset="1" stop-color="var(--bg-default)"/>
+              </linearGradient>
+              <linearGradient id="gLine" gradientUnits="userSpaceOnUse" x1="0" x2="360" y1="0" y2="0">
+                <stop offset="0" stop-color="var(--brand-from)"/>
+                <stop offset="1" stop-color="var(--brand-to)"/>
+              </linearGradient>
+            </defs>
+            <g id="grid">
+              <line class="gridline" x1="0" x2="360" y1="8" y2="8"/>
+              <line class="gridline" x1="0" x2="360" y1="68.67" y2="68.67"/>
+              <line class="gridline" x1="0" x2="360" y1="129.33" y2="129.33"/>
+              <line class="gridline" x1="0" x2="360" y1="190" y2="190"/>
+            </g>
+            <path class="area" id="area" fill="url(#gArea)" d=""/>
+            <path class="glow" id="glowPath" stroke="url(#gLine)" d=""/>
+            <path class="line" id="linePath" stroke="url(#gLine)" d=""/>
+            <path class="demo" id="demoPath" d=""/>
+            <g id="pointer" display="none">
+              <line class="pointer-line" id="ptLine" x1="0" x2="0" y1="8" y2="190"/>
+              <circle class="pointer-glow" id="ptGlow" r="9" fill="url(#gLine)"/>
+              <circle class="pointer-dot"  id="ptDot"  r="4.5" fill="url(#gLine)"/>
+            </g>
+            <g id="yLabels"></g>
+            <text class="empty-caption" id="emptyCaption" x="180" y="55" text-anchor="middle">Your line starts here</text>
+          </svg>
+          <div class="scrub-pill" id="scrubPill" hidden aria-hidden="true"></div>
+          <div class="plot-skeleton" id="plotSkeleton" hidden aria-hidden="true">
+            <div class="bone sk-plot"></div>
+            <div class="bone sk-y" style="top:3px"></div>
+            <div class="bone sk-y" style="top:63.67px"></div>
+            <div class="bone sk-y" style="top:124.33px"></div>
+            <div class="bone sk-y" style="top:185px"></div>
+          </div>
+        </div>
+        <div class="xlabels" id="xLabels"></div>
+      </div>
+
+    </section>
+  </div>
+  <p class="device-caption">iPhone 17 Pro Max · 440 × 956</p>
+</div>
+
+<!-- ══ Дебаг-панель ══ -->
+<aside class="panel">
+  <h2>Stats Chart · прототип</h2>
+  <p class="sub">Figma → сторінка «↪ Charts», секція Stats Chart. Панель не є частиною інтерфейсу.</p>
+
+  <section>
+    <h3>Стан</h3>
+    <div class="seg" id="stateSeg">
+      <button data-state="auto" aria-pressed="true">Auto</button>
+      <button data-state="default" aria-pressed="false">Default</button>
+      <button data-state="loading" aria-pressed="false">Loading</button>
+      <button data-state="empty" aria-pressed="false">Empty</button>
+    </div>
+    <p class="note" style="margin-top:8px">Auto — Loading проганяється сам ~700 мс при кожному перемиканні періоду.</p>
+  </section>
+
+  <section>
+    <h3>Тема</h3>
+    <div class="seg" id="themeSeg">
+      <button data-theme-btn="dark" aria-pressed="true">Dark</button>
+      <button data-theme-btn="light" aria-pressed="false">Light</button>
+    </div>
+  </section>
+
+  <section>
+    <h3>Друга метрика</h3>
+    <div class="seg" id="secondSeg">
+      <button data-second="off" aria-pressed="true">Off</button>
+      <button data-second="on" aria-pressed="false">On</button>
+    </div>
+    <p class="note" style="margin-top:8px">У всіх прикладах Figma <b>Show second metric = false</b>. В Empty вимикається принудово.</p>
+  </section>
+
+  <section>
+    <h3>Поінтер</h3>
+    <p class="note">Затисни на полотні й веди — позначка стає на найближчу точку, над нею пілюля «день · значення» (той самий _Badge: bg/overlay-50 + Glass). Hero-цифра не рухається. Відпустив — зникає. У Loading і Empty вимкнений.</p>
+  </section>
+
+  <section>
+    <h3>Клавіші</h3>
+    <p class="note"><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> — Week / Month / All time · <kbd>←</kbd> <kbd>→</kbd> — крокування періоду · <kbd>T</kbd> — тема</p>
+  </section>
+
+  <div class="flag">
+    <h3>Знайдено в джерелі</h3>
+    <p><b>ACTIVE DAYS = 12</b> при періоді Week — більше, ніж днів у тижні. У прототипі значення рахується від періоду (6 / 18 / 142).</p>
+    <p><b>Кінці кривих не збігаються:</b> Week завершується на 8 %, Month на 7,1 %, All time на 13,6 %. Тому hero-цифра стрибає при перемиканні періоду, хоча «зараз» одне. Прототип показує це як є.</p>
+  </div>
+</aside>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   Геометрія полотна (з Figma Chart Plot 18360:88565)
+   plot 360 × (8…190) · Y-мітки праворуч 372…408 · X-мітки 360 × 18
+   ═══════════════════════════════════════════════════════════════ */
+const W = 360, TOP = 8, BASE = 190, GRID = [8, 68.67, 129.33, 190];
+
+/* Дані витягнуті з vectorPaths і переведені у % за шкалою кожного періоду */
+const DATA = {
+  week: {
+    max: 9, ticks: ['9%','6%','3%','0%'],
+    x: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    v: [4.4,5.2,4.9,6,6.5,7.2,8],
+    second: 6,
+    periods: [
+      {label:'Last 7 days', k:1,   ex:10},
+      {label:'Jul 17 – 23', k:.72, ex:7},
+      {label:'Jul 10 – 16', k:.55, ex:5}
+    ],
+    insight: {
+      now:'Up from last week — <b>{ex} exercises</b> did that. Keep the rhythm.',
+      past:'<b>{ex} exercises</b> that week — the rhythm was there.'
+    }
+  },
+  month: {
+    max: 12, ticks: ['12%','8%','4%','0%'],
+    x: ['Week 1','Week 2','Week 3','Week 4','Week 5'],
+    v: [2.4,4.46,2.6,2.92,5.17,3.42,1.97,4.33,4.29,2.57,4.91,6.66,4.72,5.39,7.48,
+        5.46,4.34,6.76,6.36,4.83,7.42,8.82,6.85,7.87,9.75,7.51,6.74,9.16,8.43,7.13],
+    second: 18,
+    periods: [
+      {label:'This month', k:1,   ex:38, mon:'Jul'},
+      {label:'June 2026',  k:.78, ex:31, mon:'Jun'},
+      {label:'May 2026',   k:.6,  ex:24, mon:'May'}
+    ],
+    insight: {
+      now:'Stronger than last month. <b>{ex} exercises</b>, mostly short ones — consistency beats intensity.',
+      past:'<b>{ex} exercises</b> that month, mostly short ones.'
+    }
+  },
+  all: {
+    max: 15, ticks: ['15%','10%','5%','0%'],
+    x: ['Feb','Apr','Jun','Aug','Oct','Dec'],
+    v: [0.5,1.02,1.18,1.03,1.07,1.72,2.85,3.87,4.42,4.69,5.24,6.35,
+        7.72,8.76,9.24,9.52,10.15,11.23,12.33,12.9,12.89,12.77,13.03,13.58],
+    second: 142,
+    periods: [{label:'All time', k:1, ex:164}],
+    insight: {now:'A long way from where you started. <b>{ex} exercises</b> in, and still climbing.'}
+  }
+};
+
+/* Демо-крива для Empty — геометрія однакова для всіх періодів (як у Figma) */
+const DEMO = [
+  {x:0,   y:168.16},{x:90, y:155.42},{x:180,y:162.7},
+  {x:270, y:146.32},{x:360,y:139.04}
+];
+
+const EMPTY_INSIGHT = 'One exercise is enough to start this chart. After that, it updates daily.';
+
+/* Підпис точки під пальцем — те, чого немає на осі X.
+   Регістр той самий, що в підписах осі X: sentence case, не капс */
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const POINT_LABEL = {
+  week:  i => ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i],
+  month: (i, per) => `${i+1} ${per.mon}`,
+  all:   i => { const m = 2024*12 + 7 + i; return `${MON[m%12]} ${String(Math.floor(m/12)).slice(2)}`; }
+};
+
+/* ── Генератор кривої: точно як у Figma (Catmull-Rom, плечі 1/6 на
+      кінцях і 1/3 у середині) ─────────────────────────────────── */
+function spline(pts){
+  const n = pts.length;
+  if (n < 2) return '';
+  const m = pts.map((p,i) => {
+    if (i === 0)      return (pts[1].y - pts[0].y) / (pts[1].x - pts[0].x);
+    if (i === n - 1)  return (pts[n-1].y - pts[n-2].y) / (pts[n-1].x - pts[n-2].x);
+    return (pts[i+1].y - pts[i-1].y) / (pts[i+1].x - pts[i-1].x);
+  });
+  let d = `M ${r(pts[0].x)} ${r(pts[0].y)}`;
+  for (let i = 0; i < n - 1; i++){
+    const p0 = pts[i], p1 = pts[i+1], dx = p1.x - p0.x;
+    const a1 = (i === 0)     ? dx/6 : dx/3;
+    const a2 = (i === n - 2) ? dx/6 : dx/3;
+    d += ` C ${r(p0.x+a1)} ${r(p0.y+m[i]*a1)} ${r(p1.x-a2)} ${r(p1.y-m[i+1]*a2)} ${r(p1.x)} ${r(p1.y)}`;
+  }
+  return d;
+}
+const r = v => Math.round(v*100)/100;
+
+/* ── Стан ──────────────────────────────────────────────────── */
+const state = { range:'week', offset:0, mode:'auto', shown:'loading', second:false, timer:null };
+/* Дані під поінтером: точки поточної кривої + значення в спокої */
+const scrub = { pts:[], vals:[], labels:[], on:false, active:false };
+
+const el = id => document.getElementById(id);
+const canvas = el('canvas'), linePath = el('linePath'), glowPath = el('glowPath'),
+      area = el('area'), demoPath = el('demoPath');
+
+/* ── Рендер ────────────────────────────────────────────────── */
+function values(){
+  const cfg = DATA[state.range];
+  const p = cfg.periods[-state.offset] || cfg.periods[0];
+  return cfg.v.map((v,i) => {
+    const wob = 1 + (p.k === 1 ? 0 : 0.07 * Math.sin(i*1.7 - state.offset*2.3));
+    return Math.min(cfg.max, Math.max(0, v * p.k * wob));
+  });
+}
+
+function toPoints(vals, max){
+  const step = W / (vals.length - 1);
+  return vals.map((v,i) => ({x: i*step, y: BASE - (v/max)*(BASE-TOP)}));
+}
+
+function renderYLabels(ticks){
+  el('yLabels').innerHTML = ticks.map((t,i) =>
+    `<text class="y-label" x="408" y="${GRID[i]+4}" text-anchor="end">${t}</text>`).join('');
+}
+
+function renderXLabels(labels, loading){
+  const box = el('xLabels');
+  box.classList.toggle('is-loading', !!loading);
+  box.innerHTML = loading
+    ? labels.map(() => '<span class="bone"></span>').join('')
+    : labels.map(t => `<span>${t}</span>`).join('');
+}
+
+function paint(){
+  const cfg  = DATA[state.range];
+  const per  = cfg.periods[-state.offset] || cfg.periods[0];
+  const show = state.mode === 'auto' ? state.shown : state.mode;
+  const isLoading = show === 'loading', isEmpty = show === 'empty';
+
+  /* Range Switch */
+  document.querySelectorAll('.pill').forEach(p =>
+    p.setAttribute('aria-selected', String(p.dataset.range === state.range)));
+
+  /* Period Nav — в All time крокувати нікуди */
+  el('periodNav').hidden = cfg.periods.length === 1;
+  el('periodLabel').textContent = per.label;
+  el('prevBtn').disabled = -state.offset >= cfg.periods.length - 1;
+  el('nextBtn').disabled = state.offset === 0;
+
+  /* Header */
+  el('hdrReal').hidden     = isLoading;
+  el('hdrSkeleton').hidden = !isLoading;
+  el('skSecond').hidden    = !state.second;
+  const secondOn = state.second && !isEmpty;
+  el('secondMetric').hidden = !secondOn;
+
+  /* поінтер скидається на будь-якому перемалюванні */
+  el('pointer').setAttribute('display', 'none');
+  scrub.active = false;
+  scrub.on = !isLoading && !isEmpty;
+  el('scrubPill').hidden = true;
+
+  const vals = values();
+  const hero = el('heroValue');
+  if (isEmpty){
+    hero.textContent = '—';
+    hero.classList.add('is-muted');
+    el('insight').innerHTML = EMPTY_INSIGHT;
+  } else {
+    hero.textContent = '+' + Math.round(vals[vals.length-1]) + '%';
+    hero.classList.remove('is-muted');
+    const tpl = (state.offset === 0 || !cfg.insight.past) ? cfg.insight.now : cfg.insight.past;
+    el('insight').innerHTML = tpl.replace('{ex}', per.ex);
+    el('secondValue').textContent = Math.max(1, Math.round(cfg.second * per.k));
+  }
+
+  /* Plot */
+  el('plotSkeleton').hidden = !isLoading;
+  canvas.style.visibility = isLoading ? 'hidden' : 'visible';
+  el('statsHeader').setAttribute('aria-busy', String(isLoading));
+  renderYLabels(cfg.ticks);
+  renderXLabels(cfg.x, isLoading);
+
+  if (isLoading) return;
+
+  canvas.dataset.state = isEmpty ? 'empty' : 'default';
+
+  if (isEmpty){
+    demoPath.setAttribute('d', spline(DEMO));
+    demoPath.classList.remove('fade-in');
+    void demoPath.getBoundingClientRect();
+    demoPath.classList.add('fade-in');
+    return;
+  }
+
+  const pts = toPoints(vals, cfg.max);
+  scrub.pts    = pts;
+  scrub.vals   = vals;
+  scrub.labels = vals.map((_, i) => POINT_LABEL[state.range](i, per));
+  const d   = spline(pts);
+  linePath.setAttribute('d', d);
+  glowPath.setAttribute('d', d);
+  area.setAttribute('d', `${d} L ${W} ${BASE} L 0 ${BASE} Z`);
+  /* градієнт area починається від вершини кривої, як у Figma */
+  document.querySelector('#gArea').setAttribute('y1', r(Math.min(...pts.map(p=>p.y))));
+
+  /* малювання кривої */
+  const len = linePath.getTotalLength();
+  canvas.classList.remove('draw');
+  area.classList.remove('fade-in');
+  void canvas.getBoundingClientRect();
+  canvas.style.setProperty('--len', len);
+  canvas.classList.add('draw');
+  area.classList.add('fade-in');
+}
+
+/* ── Поінтер: затиснути й вести пальцем ────────────────────── */
+const stack = document.querySelector('.plot-stack');
+
+function scrubTo(clientX){
+  if (!scrub.on || !scrub.pts.length) return;
+  const box  = stack.getBoundingClientRect();
+  const sx   = (clientX - box.left) * (408 / box.width);   /* CSS px → viewBox */
+  const step = W / (scrub.pts.length - 1);
+  const i    = Math.max(0, Math.min(scrub.pts.length - 1, Math.round(sx / step)));
+  const p    = scrub.pts[i];
+
+  el('ptLine').setAttribute('x1', p.x);
+  el('ptLine').setAttribute('x2', p.x);
+  el('ptDot').setAttribute('cx', p.x);  el('ptDot').setAttribute('cy', p.y);
+  el('ptGlow').setAttribute('cx', p.x); el('ptGlow').setAttribute('cy', p.y);
+  el('pointer').setAttribute('display', '');
+
+  /* пілюля-значення над точкою; hero не рушаємо */
+  const pill = el('scrubPill');
+  pill.innerHTML = `${scrub.labels[i]} · <b>${scrub.vals[i].toFixed(1)}%</b>`;
+  pill.hidden = false;
+  const k  = box.width / 408;                 /* viewBox px → CSS px */
+  const hw = pill.offsetWidth / 2;
+  const cx = Math.max(hw + 2, Math.min(box.width - hw - 2, p.x * k));
+  const above = p.y * k - 8 - pill.offsetHeight >= 0;
+  pill.classList.toggle('below', !above);
+  pill.style.left = cx + 'px';
+  pill.style.top  = (p.y * k + (above ? -8 : 8)) + 'px';
+  scrub.active = true;
+}
+
+function scrubEnd(){
+  if (!scrub.active) return;
+  el('pointer').setAttribute('display', 'none');
+  el('scrubPill').hidden = true;
+  scrub.active = false;
+}
+
+stack.addEventListener('pointerdown', e => {
+  if (!scrub.on) return;
+  stack.setPointerCapture(e.pointerId);
+  scrubTo(e.clientX);
+  e.preventDefault();
+});
+stack.addEventListener('pointermove', e => { if (scrub.active) scrubTo(e.clientX); });
+stack.addEventListener('pointerup', scrubEnd);
+stack.addEventListener('pointercancel', scrubEnd);
+stack.addEventListener('pointerleave', scrubEnd);
+
+/* ── Взаємодія ─────────────────────────────────────────────── */
+function go(fn){
+  fn();
+  if (state.mode === 'auto'){
+    clearTimeout(state.timer);
+    state.shown = 'loading';
+    paint();
+    state.timer = setTimeout(() => { state.shown = 'default'; paint(); }, 700);
+  } else {
+    paint();
+  }
+}
+
+document.querySelectorAll('.pill').forEach(p => p.addEventListener('click', () => {
+  if (p.dataset.range === state.range) return;
+  go(() => { state.range = p.dataset.range; state.offset = 0; });
+}));
+
+el('prevBtn').addEventListener('click', () => {
+  const max = DATA[state.range].periods.length - 1;
+  if (-state.offset >= max) return;
+  go(() => state.offset--);
+});
+el('nextBtn').addEventListener('click', () => {
+  if (state.offset === 0) return;
+  go(() => state.offset++);
+});
+
+el('stateSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  state.mode = b.dataset.state;
+  [...el('stateSeg').children].forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  if (state.mode === 'auto'){ go(()=>{}); } else { clearTimeout(state.timer); paint(); }
+});
+
+el('themeSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.documentElement.dataset.theme = b.dataset.themeBtn;
+  el('phone').dataset.theme = b.dataset.themeBtn;
+  [...el('themeSeg').children].forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+});
+
+el('secondSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  state.second = b.dataset.second === 'on';
+  [...el('secondSeg').children].forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  paint();
+});
+
+document.addEventListener('keydown', e => {
+  const map = {'1':'week','2':'month','3':'all'};
+  if (map[e.key]) document.querySelector(`.pill[data-range="${map[e.key]}"]`).click();
+  if (e.key === 'ArrowLeft')  el('prevBtn').click();
+  if (e.key === 'ArrowRight') el('nextBtn').click();
+  if (e.key.toLowerCase() === 't')
+    el('themeSeg').querySelector(`[data-theme-btn="${document.documentElement.dataset.theme === 'dark' ? 'light':'dark'}"]`).click();
+});
+
+/* ── Старт: показуємо Loading, потім дані ──────────────────── */
+el('phone').dataset.theme = 'dark';
+go(() => {});
+</script>
+</body>
+</html>
